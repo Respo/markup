@@ -12,20 +12,20 @@
           :code $ quote
             defcomp comp-container (reel)
               let
-                  store $ :store reel
-                  states $ :states store
-                  cursor $ or (:cursor states) ([])
-                  state $ or (:data states)
+                  store $ reel-schema/read-field reel :store
+                  states $ reel-schema/read-field store :states
+                  cursor $ or (reel-schema/read-field states :cursor) []
+                  state $ or (reel-schema/read-field states :data)
                     {} $ :content |
                 div
                   {} $ :class-name (str-spaced css/global css/row)
                   textarea $ {}
-                    :value $ :content state
+                    :value $ reel-schema/read-field state :content
                     :placeholder |Content
                     :class-name $ str-spaced css/expand css/textarea
                     :style $ {} (:height 320)
                     :on-input $ fn (e d!)
-                      d! cursor $ assoc state :content (:value e)
+                      d! cursor $ assoc state :content (reel-schema/read-field e :value)
                   =< 8 nil
                   div
                     {} $ :class-name css/expand
@@ -33,7 +33,7 @@
                     =< |8px nil
                     button $ {} (:class-name css/button) (:inner-text |Run)
                       :on-click $ fn (e d!)
-                        println $ :content state
+                        println $ reel-schema/read-field state :content
                   when dev? $ comp-reel (>> states :reel) reel ({})
           :examples $ []
           :schema $ :: 'Dynamic
@@ -44,6 +44,7 @@
             respo.core :refer $ defcomp defeffect <> >> div button textarea span input
             respo.comp.space :refer $ =<
             reel.comp.reel :refer $ comp-reel
+            reel.schema :as reel-schema
             app.config :refer $ dev?
     |app.config $ %{} 'FileEntry
       :defs $ {}
@@ -88,9 +89,9 @@
                 if (= |hidden js/document.visibilityState) (persist-storage!)
               flipped js/setInterval 60000 persist-storage!
               let
-                  raw $ js/localStorage.getItem (:storage-key config/site)
-                when (some? raw)
-                  dispatch! $ :: :hydrate-storage (parse-cirru-edn raw)
+                  raw $ .?!getItem js/localStorage (:storage-key config/site)
+                when (js-present? raw)
+                  dispatch! $ :: :hydrate-storage (parse-cirru-edn (unsafe-coerce raw String))
               println "|App started."
           :examples $ []
           :schema $ :: 'Dynamic
