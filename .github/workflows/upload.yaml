@@ -12,26 +12,18 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v6
       with:
-        node-version: 20
-        cache: 'yarn'
+        node-version: 24
 
-    - uses: supplypike/setup-bin@v3
-      with:
-        uri: 'https://github.com/calcit-lang/calcit/releases/download/0.8.8/cr'
-        name: 'cr'
-        version: '0.8.8'
+    - name: Enable Corepack
+      run: corepack enable && corepack prepare yarn@4.12.0 --activate
 
-    - uses: supplypike/setup-bin@v3
-      with:
-        uri: 'https://github.com/calcit-lang/calcit/releases/download/0.8.8/caps'
-        name: 'caps'
-        version: '0.8.8'
+    - uses: calcit-lang/setup-calcit@v1
 
     - name: "compiles to js"
       run: >
-        caps --ci && cr --emit-js --once
+        caps --ci && calcit js
         && yarn && yarn vite build --base=./
 
     - name: Deploy to server
