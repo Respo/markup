@@ -54,7 +54,7 @@ jobs:
         options: ''
         ssh_options: ''
         src: 'dist/*'
-        dest: "rsync-user@tiye.me:/web-assets/repo/${{ github.repository }}/${{ github.event_name == 'pull_request' && 'pr/' || '' }}"
+        dest: "rsync-user@tiye.me:/web-assets/repo/${{ github.repository }}/${{ github.event_name == 'pull_request' && format('pr/{0}/', github.event.pull_request.number) || '' }}"
 
     - name: Display status from deploy
       run: echo "${{ steps.deploy.outputs.status }}"

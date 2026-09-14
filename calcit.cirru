@@ -106,7 +106,11 @@
             match
               storage-get $ :storage-key config/site
               (:some raw)
-                dispatch! $ schema/Op :hydrate-storage $ unsafe-coerce (parse-cirru-edn raw) 'app.schema/Store
+                match
+                  schema/decode-store $ parse-cirru-edn raw
+                  (:some stored)
+                    dispatch! $ schema/Op :hydrate-storage stored
+                  (:none) (hud! |error "|Ignored invalid saved state")
               (:none) &unit
             println "|App started."
           :examples $ []
@@ -171,6 +175,21 @@
           :code $ quote $ defstruct Store (:states 'Map)
           :examples $ []
           :schema $ :: 'StructDef
+        'decode-store $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-store (data)
+            if
+              or (map? data) (struct? data)
+              match (get data :states)
+                (:some states)
+                  if (map? states)
+                    %some $ Store :states $ assert-type states 'Map
+                    %none
+                (:none) (%none)
+              %none
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Dynamic
+            :return $ :: 'Option 'app.schema/Store
         'store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def store
             Store :states $ {} $ :cursor ([])
