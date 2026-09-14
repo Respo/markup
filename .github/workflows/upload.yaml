@@ -17,14 +17,32 @@ jobs:
         node-version: 24
 
     - name: Enable Corepack
-      run: corepack enable && corepack prepare yarn@4.12.0 --activate
+      run: |
+        corepack enable
+        corepack prepare yarn@4.12.0 --activate
+        yarn --version
 
     - uses: calcit-lang/setup-calcit@v1
 
-    - name: "compiles to js"
-      run: >
-        caps --ci && calcit js
-        && yarn && yarn vite build --base=./
+    - name: Install dependencies
+      run: |
+        caps --strict --ci
+        yarn install --immutable
+
+    - name: Verify Calcit toolchain
+      run: caps verify --toolchain
+
+    - name: Validate snapshot and types
+      run: |
+        calcit calcit.cirru edit format
+        git diff --exit-code -- calcit.cirru
+        calcit calcit.cirru --check-only
+        calcit calcit.cirru analyze dynamic-methods --max 0
+
+    - name: Compile and build
+      run: |
+        calcit calcit.cirru js
+        yarn vite build --base=./
 
     - name: Deploy to server
       id: deploy
@@ -36,7 +54,7 @@ jobs:
         options: ''
         ssh_options: ''
         src: 'dist/*'
-        dest: 'rsync-user@tiye.me:/web-assets/repo/${{ github.repository }}'
+        dest: "rsync-user@tiye.me:/web-assets/repo/${{ github.repository }}/${{ github.event_name == 'pull_request' && 'pr/' || '' }}"
 
     - name: Display status from deploy
       run: echo "${{ steps.deploy.outputs.status }}"

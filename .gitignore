@@ -6,3 +6,5 @@ js-out/
 node_modules/
 dist/
 .DS_Store
+.pnp.*
+.yarn/
