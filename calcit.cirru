@@ -35,7 +35,7 @@
                   button $ {} (:class-name css/button) (:inner-text |Run)
                     :on-click $ fn (e d!)
                       println $ reel-schema/read-field state :content
-                when dev? $ comp-reel (>> states :reel) reel $ {}
+                when dev? $ comp-typed-reel (>> states :reel) reel $ {}
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
             :args $ [] $ :: 'reel.typed/State 'app.schema/Op 'app.schema/Store
@@ -45,7 +45,7 @@
             respo.css :refer $ defstyle
             respo.core :refer $ defcomp defeffect <> >> div button textarea span input
             respo.comp.space :refer $ =<
-            reel.comp.reel :refer $ comp-reel
+            reel.comp.reel :refer $ comp-typed-reel
             reel.schema :as reel-schema
             app.config :refer $ dev?
             app.schema :as schema
@@ -188,7 +188,8 @@
               %none
           :examples $ []
           :schema $ :: 'Fn $ {}
-            :args $ [] 'Dynamic
+            :args $ [] 'T
+            :generics $ [] 'T
             :return $ :: 'Option 'app.schema/Store
         'store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def store

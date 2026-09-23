@@ -40,11 +40,12 @@ jobs:
         calcit calcit.cirru edit format
         git diff --exit-code -- calcit.cirru
         calcit calcit.cirru --check-only
-        calcit calcit.cirru analyze dynamic-methods --max 0
+        calcit calcit.cirru analyze dynamic-methods --summary-only --format json | jq -e '.data.summary.findings == 0'
 
     - name: Compile and build
       run: |
         calcit calcit.cirru js
+        node --test scripts/typed-reel-render.test.mjs
         yarn vite build --base=./
 
     - name: Deploy to server
