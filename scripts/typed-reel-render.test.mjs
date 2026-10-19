@@ -49,6 +49,8 @@ test('hydrates the fixed pre-upgrade archive through the typed Reel update path'
   const hydrate = clt._$o__$o_(clt.init_tags(['hydrate-storage'])['hydrate-storage'], legacy);
   const reel = record_op(updater, new_reel(store), decode_op(hydrate), 'legacy-archive', 1);
   const restored = field(reel, 'store');
+  const expected = clt.assoc(store, clt.init_tags(['states']).states, field(legacy, 'states'));
+  assert.equal(clt._$n__$e_(restored, expected), true);
   assert.equal(field(field(field(restored, 'states'), 'data'), 'content'), '旧版合成存档🐈');
   assert.equal(clt.format_cirru_edn(field(field(restored, 'states'), 'cursor')), clt.format_cirru_edn(clt.parse_cirru_edn('[]')));
   assert.match(make_string(comp_container(reel)), /旧版合成存档🐈/);
