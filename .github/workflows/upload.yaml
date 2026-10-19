@@ -50,18 +50,18 @@ jobs:
     - name: Validate snapshot and types
       run: |
         set -euo pipefail
-        test "$(calcit --version)" = "0.27.0"
+        test "$(calcit --version)" = "0.30.1-alpha.5"
         test -f calcit.cirru
         test -f deps.cirru
         test ! -e compact.cirru
         test ! -e package.cirru
         calcit calcit.cirru edit format
         git diff --exit-code -- calcit.cirru
-        calcit calcit.cirru --check-only
-        calcit calcit.cirru analyze check-public \
+        calcit calcit.cirru --check-only --all-defs
+        calcit calcit.cirru --check-only \
           --ns app.comp.container --ns app.config --ns app.main \
           --ns app.schema --ns app.updater --summary-only --format json
-        calcit calcit.cirru analyze dynamic-methods --summary-only --format json | jq -e '.data.summary.findings == 0'
+        calcit calcit.cirru analyze weak-types --only dynamic-method --summary-only --format json | jq -e '.data.summary.findings == 0'
 
     - name: Select frontend CDN path
       id: asset-path

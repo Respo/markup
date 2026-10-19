@@ -5,7 +5,7 @@
   :entries $ {} $ :default
     {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!) (:target :browser)
       :feature-policy $ {}
-      :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/
+      :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/ |js-ffi/
       :type-slots $ {}
   :files $ {}
     'app.comp.container $ %{} 'FileEntry
@@ -69,33 +69,29 @@
     'app.main $ %{} 'FileEntry
       :defs $ {}
         '*reel $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *reel (typed/new-reel schema/store)
+          :code $ quote $ defref *reel (typed/new-reel schema/store)
           :examples $ []
           :schema $ :: 'Ref $ :: 'reel.typed/State 'app.schema/Op 'app.schema/Store
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op)
             when config/dev? $ js/console.log |Dispatch: op
-            let
-                typed-op $ assert-type op 'Enum
-                control $ typed/decode-control typed-op
-              reset! *reel $ assert-type
-                match control
-                  (:some action) (typed/apply-control updater @*reel action)
-                  (:none)
-                    typed/record-op updater @*reel (assert-type typed-op 'app.schema/Op) (generate-id!)
-                      :timestamp $ date-now-snapshot
-                :: 'reel.typed/State 'app.schema/Op 'app.schema/Store
+            do
+              reset! *reel $ match (typed/decode-control op)
+                (:some action) (typed/apply-control updater @*reel action)
+                (:none)
+                  typed/record-op updater @*reel (schema/decode-op op) (generate-id!)
+                    :timestamp $ date-now-snapshot
               , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ [] 'Dynamic
+            :args $ [] 'Enum
             :features $ #{} :js-ffi
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             println "|Running mode:" $ if config/dev? |dev |release
             if config/dev? $ load-console-formatter!
             render-app!
-            add-watch *reel :changes $ fn (reel prev) (render-app!)
+            add-watch! *reel :changes $ fn (reel prev) (render-app!)
             listen-devtools! |k dispatch!
             set-before-unload! $ fn (event) (persist-storage!)
             add-event-listener! |visibilitychange $ fn (event)
@@ -121,7 +117,7 @@
           :code $ quote $ def mount-target
             option:unwrap $ query-selector |.app
           :examples $ []
-          :schema $ :: 'js-ffi.browser/DomElementHost
+          :schema $ :: 'respo.dom/DomElement
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-storage! ()
             println "|Saved at" $ :iso $ date-now-snapshot
@@ -134,8 +130,8 @@
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if (nil? build-errors)
-              do (remove-watch *reel :changes) (clear-cache!)
-                add-watch *reel :changes $ fn (reel prev) (render-app!)
+              do (remove-watch! *reel :changes) (clear-cache!)
+                add-watch! *reel :changes $ fn (reel prev) (render-app!)
                 reset! *reel $ typed/refresh updater @*reel schema/store
                 hud! |ok~ |Ok
               hud! |error build-errors
@@ -158,38 +154,55 @@
             app.updater :refer $ updater
             app.schema :as schema
             reel.util :refer $ listen-devtools!
-            reel.schema :as reel-schema
             app.config :as config
-            |./calcit.build-errors :default build-errors
+            |./calcit.build-errors.mjs :default build-errors
             |bottom-tip :default hud!
-            js-ffi.shared :refer $ [] date-now-snapshot
+            js-ffi.shared :refer $ date-now-snapshot
             reel.typed :as typed
-            js-ffi.browser :refer $ [] DomElementHost add-event-listener! query-selector set-before-unload! set-interval! storage-get storage-set! visibility-state
+            js-ffi.browser :refer $ add-event-listener! set-before-unload! set-interval! storage-get storage-set! visibility-state
+            respo.ffi.browser :refer $ query-selector
     'app.schema $ %{} 'FileEntry
       :defs $ {}
         'Op $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defenum Op (:states 'List 'Dynamic) (:hydrate-storage 'app.schema/Store)
+          :code $ quote $ defenum Op
+            :states (:: 'List 'Dynamic) 'Dynamic
+            :hydrate-storage 'app.schema/Store
           :examples $ []
           :schema $ :: 'EnumDef
         'Store $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defstruct Store (:states 'Map)
+          :code $ quote $ defstruct Store
+            :states $ :: 'Map 'Dynamic 'Dynamic
           :examples $ []
           :schema $ :: 'StructDef
-        'decode-store $ %{} 'CodeEntry (:doc |)
+        'decode-op $ %{} 'CodeEntry
+          :doc "|将 Respo/Reel 传入的单 Enum 规范为应用 Op，检查游标列表与存档载荷；不直接断言 nominal 类型。"
+          :code $ quote $ defn decode-op (op)
+            match op
+              (:states cursor data)
+                Op :states
+                  decode-map-as cursor $ :: 'List 'Dynamic
+                  , data
+              (:hydrate-storage data)
+                match (decode-store data)
+                  (:some stored) (Op :hydrate-storage stored)
+                  (:none) (raise "|Invalid saved Markup state")
+              _ $ raise "|Unknown Markup operation"
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Op)
+            :args $ [] 'Enum
+        'decode-store $ %{} 'CodeEntry
+          :doc "|本地存档/旧存档的开放入口：已有 Store 保留身份，Map 验证后构造成 Store。states 是应用与 Reel 共用的异构 UI 状态树，不伪装成泛型关系。"
           :code $ quote $ defn decode-store (data)
-            if
-              or (map? data) (struct? data)
-              match (get data :states)
-                (:some states)
-                  if (map? states)
-                    %some $ Store :states $ assert-type states 'Map
-                    %none
-                (:none) (%none)
-              %none
+            if (struct? data)
+              struct-match data
+                Store stored $ Option :some stored
+                _ _ $ Option :none
+              match (try-decode-map-as data 'app.schema/Store)
+                (:ok stored) (Option :some stored)
+                (:err message) (Option :none)
           :examples $ []
           :schema $ :: 'Fn $ {}
-            :args $ [] 'T
-            :generics $ [] 'T
+            :args $ [] 'Dynamic
             :return $ :: 'Option 'app.schema/Store
         'store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def store
@@ -204,14 +217,13 @@
           :code $ quote $ defn updater (store op op-id op-time)
             match op
               (:states cursor s)
-                assoc store :states $ assert-type
+                assoc store :states $ decode-map-as
                   update-state-tree (:states store) cursor s
-                  , 'Map
+                  :: 'Map 'Dynamic 'Dynamic
               (:hydrate-storage data) data
-              _ $ do (eprintln "|unknown op:" op) store
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'app.schema/Store)
             :args $ [] 'app.schema/Store 'app.schema/Op 'String 'Number
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
-          :require $ respo.cursor :refer $ [] update-state-tree
+          :require $ respo.cursor :refer $ update-state-tree
