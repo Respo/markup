@@ -6,7 +6,13 @@ Demo http://repo.respo-mvc.org/markup/ .
 
 ### Usages
 
-Use Calcit/procs 0.27.0, Caps 0.1.1, Node.js 24 and Yarn 4.18.0.
+本次升级保留 Content 输入、Run、Reel 调试工具和原有本地存档格式。
+旧页面升级后请完整刷新一次，以加载配对的运行时和正式模块。
+这仍是现有 Demo，不新增 Markdown 解析或编辑功能。
+
+Calcit/procs 使用已发布的 `0.30.1-alpha.5` 候选配对，不是 0.30.1 正式版。
+Respo `0.16.122`、UI `0.7.41`、Reel `0.6.39`、JS-FFI `0.2.3`
+改用精确正式 tag，不再依赖旧 alpha 模块。Caps 0.1.1、Node.js 24、Yarn 4.18.0。
 Canonical source and dependencies are `calcit.cirru` and `deps.cirru`;
 retired compact/package snapshots are not used. Edit source with the Calcit CLI.
 
@@ -20,6 +26,12 @@ yarn vite
 
 CI retains strict dependency resolution, entry/type checks and the existing
 typed Reel rendering test, and checks all application public definitions.
+开放的 Reel/UI 状态保留真实 Dynamic 边界；操作载荷经过检查并构造成具名 Op，
+存档验证后恢复为 Store，不再依赖类型强转。DOM 挂载使用 Respo 的公开接口。
+恢复时仅接受缺失游标或真实 List 游标；旧 Struct 定义恢复到当前 Store，
+已是当前 Store 的值保留原对象。既有测试文件包含由迁移前 0.27.0 格式化器生成的
+固定合成存档，经过实际 `:hydrate-storage` / Reel / Content 渲染路径，未使用用户存档。
+完整 strict workflow 同时检查渲染入口的 Enum 守卫与 reload 的实际 Unit 返回。
 
 ### Deployment
 
@@ -34,9 +46,7 @@ keeps its original source and destination; PRs do not deploy to the server.
 不取消正在执行的上传。每次运行及重试使用不同预览路径，生产路径不变。
 Action 固定到正式 v1.2.0 的已审查提交，验证由 Action 内置能力完成。
 
-本轮仅更新 COS/CDN 配置，不改变 Calcit 0.27.0、既有模块版本、类型门禁
-和业务测试。独立 Calcit 0.28.0 候选仍被共享 JS-FFI 的
-`KeyboardEventHost` 类型断言阻塞；本轮成功不代表完整 0.28 升级完成。
+部署路径、COS 内置 verify 和前端/服务端边界不变。PR 不合并或自动部署生产。
 
 ### Workflow
 
