@@ -28,6 +28,10 @@ CI retains strict dependency resolution, entry/type checks and the existing
 typed Reel rendering test, and checks all application public definitions.
 开放的 Reel/UI 状态保留真实 Dynamic 边界；操作载荷经过检查并构造成具名 Op，
 存档验证后恢复为 Store，不再依赖类型强转。DOM 挂载使用 Respo 的公开接口。
+恢复时仅接受缺失游标或真实 List 游标；旧 Struct 定义恢复到当前 Store，
+已是当前 Store 的值保留原对象。既有测试文件包含由迁移前 0.27.0 格式化器生成的
+固定合成存档，经过实际 `:hydrate-storage` / Reel / Content 渲染路径，未使用用户存档。
+完整 strict workflow 同时检查渲染入口的 Enum 守卫与 reload 的实际 Unit 返回。
 
 ### Deployment
 

@@ -75,13 +75,12 @@
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op)
             when config/dev? $ js/console.log |Dispatch: op
-            do
-              reset! *reel $ match (typed/decode-control op)
-                (:some action) (typed/apply-control updater @*reel action)
-                (:none)
-                  typed/record-op updater @*reel (schema/decode-op op) (generate-id!)
-                    :timestamp $ date-now-snapshot
-              , &unit
+            reset! *reel $ match (typed/decode-control op)
+              (:some action) (typed/apply-control updater @*reel action)
+              (:none)
+                typed/record-op updater @*reel (schema/decode-op op) (generate-id!)
+                  :timestamp $ date-now-snapshot
+            , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ [] 'Enum
@@ -135,13 +134,16 @@
                 reset! *reel $ typed/refresh updater @*reel schema/store
                 hud! |ok~ |Ok
               hud! |error build-errors
+            , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
             :features $ #{} :js-ffi
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
-            render! mount-target (comp-container @*reel) dispatch!
+            render! mount-target (comp-container @*reel)
+              fn (op)
+                if (enum? op) (dispatch! op) (raise "|Expected Markup operation Enum")
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
@@ -193,12 +195,22 @@
         'decode-store $ %{} 'CodeEntry
           :doc "|本地存档/旧存档的开放入口：已有 Store 保留身份，Map 验证后构造成 Store。states 是应用与 Reel 共用的异构 UI 状态树，不伪装成泛型关系。"
           :code $ quote $ defn decode-store (data)
-            if (struct? data)
-              struct-match data
-                Store stored $ Option :some stored
-                _ _ $ Option :none
-              match (try-decode-map-as data 'app.schema/Store)
-                (:ok stored) (Option :some stored)
+            let
+                result $ if (struct? data)
+                  struct-match data
+                    Store stored $ match (struct-definition stored)
+                      (:some definition)
+                        if (identical? definition Store) (Result :ok stored)
+                          try-decode-map-as (&struct:to-map stored) 'app.schema/Store
+                      (:none) (Result :err "|Expected nominal Markup Store")
+                    _ _ $ Result :err "|Expected Markup Store"
+                  try-decode-map-as data 'app.schema/Store
+              match result
+                (:ok stored)
+                  match (get stored.:states :cursor)
+                    (:none) (Option :some stored)
+                    (:some cursor)
+                      if (list? cursor) (Option :some stored) (Option :none)
                 (:err message) (Option :none)
           :examples $ []
           :schema $ :: 'Fn $ {}
