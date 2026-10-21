@@ -10,9 +10,12 @@ Demo http://repo.respo-mvc.org/markup/ .
 旧页面升级后请完整刷新一次，以加载配对的运行时和正式模块。
 这仍是现有 Demo，不新增 Markdown 解析或编辑功能。
 
-Calcit/procs 使用已发布的 `0.30.1-alpha.5` 候选配对，不是 0.30.1 正式版。
-Respo `0.16.122`、UI `0.7.41`、Reel `0.6.39`、JS-FFI `0.2.3`
-改用精确正式 tag，不再依赖旧 alpha 模块。Caps 0.1.1、Node.js 24、Yarn 4.18.0。
+当前CLI/procs配对正式 **0.30.1**，依赖同步正式Respo `0.16.124`、UI `0.8.0`、
+Reel `0.6.41`、JS-FFI `0.2.5`，传递Router `0.8.37`。请重新安装完整图并生成JS，
+不混装旧alpha缓存；本次Snapshot、Content/Run合同、快捷键及存档格式/key不变。
+保留尚未发布的0.0.5候选，本轮不发布tag/npm、不合并或部署Demo。
+Caps 0.1.1、Node.js 24、Yarn 4.18.0。下文类型/存档修复属于之前已合并的源码迁移，
+不将其alpha.5测试或浏览器结果当作本次正式图的新验收。
 Canonical source and dependencies are `calcit.cirru` and `deps.cirru`;
 retired compact/package snapshots are not used. Edit source with the Calcit CLI.
 
@@ -25,7 +28,9 @@ yarn vite
 ```
 
 CI retains strict dependency resolution, entry/type checks and the existing
-typed Reel rendering test, and checks all application public definitions.
+typed Reel rendering tests, and checks all definitions with all-defs plus the full strict workflow.
+重复的手写CLI版本断言和namespace清单已移除，保留Caps工具链配对门禁，
+不添加校验脚本、concurrently、质量预算或兼容强转。
 开放的 Reel/UI 状态保留真实 Dynamic 边界；操作载荷经过检查并构造成具名 Op，
 存档验证后恢复为 Store，不再依赖类型强转。DOM 挂载使用 Respo 的公开接口。
 恢复时仅接受缺失游标或真实 List 游标；旧 Struct 定义恢复到当前 Store，
