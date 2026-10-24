@@ -43,6 +43,7 @@ jobs:
         set -euo pipefail
         caps --strict --ci
         yarn install --immutable
+        git diff --quiet -- deps.cirru package.json yarn.lock .yarnrc.yml
 
     - name: Verify Calcit toolchain
       run: caps verify --toolchain
@@ -55,9 +56,9 @@ jobs:
         test ! -e compact.cirru
         test ! -e package.cirru
         calcit calcit.cirru edit format
-        git diff --exit-code -- calcit.cirru
+        git diff --quiet -- calcit.cirru
         calcit calcit.cirru --check-only --all-defs
-        calcit calcit.cirru fix --workflow strict --verify
+        calcit calcit.cirru fix --workflow strict --verify --format json | jq -e '.data.workflow.status == "passed" and .diagnostics == []'
         calcit calcit.cirru analyze weak-types --only dynamic-method --summary-only --format json | jq -e '.data.summary.findings == 0'
 
     - name: Select frontend CDN path
