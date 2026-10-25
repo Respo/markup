@@ -24,8 +24,12 @@
                   :value $ reel-schema/read-field state :content
                   :placeholder |Content
                   :class-name $ str-spaced css/expand css/textarea
-                  :style $ {} $ :height 320
+                  :style $ {} $ :height |320px
                   :on-input $ fn (e d!)
+                    hint-fn $ {} (:return 'Unit)
+                      :args $ [] (:: 'Map 'Tag 'Dynamic)
+                        :: 'Fn $ {} (:rest 'Dynamic) (:return 'Unit)
+                          :args $ [] 'Dynamic
                     d! $ schema/Op :states cursor $ assoc state :content (reel-schema/read-field e :value)
                 =< 8 $ {}
                 div
@@ -34,6 +38,10 @@
                   =< |8px $ {}
                   button $ {} (:class-name css/button) (:inner-text |Run)
                     :on-click $ fn (e d!)
+                      hint-fn $ {} (:return 'Unit)
+                        :args $ [] (:: 'Map 'Tag 'Dynamic)
+                          :: 'Fn $ {} (:rest 'Dynamic) (:return 'Unit)
+                            :args $ [] 'Dynamic
                       println $ reel-schema/read-field state :content
                 when dev? $ comp-typed-reel (>> states :reel) reel $ {}
           :examples $ []
@@ -57,7 +65,7 @@
           :schema $ :: 'StructDef
         'dev? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def dev?
-            = |dev $ option:unwrap-or (get-env |mode) |release
+            = |dev $ .unwrap-or (get-env |mode) |release
           :examples $ []
           :schema $ :: 'Bool
         'site $ %{} 'CodeEntry (:doc |)
@@ -89,15 +97,6 @@
           :code $ quote $ defn main! ()
             println "|Running mode:" $ if config/dev? |dev |release
             if config/dev? $ load-console-formatter!
-            render-app!
-            add-watch! *reel :changes $ fn (reel prev) (render-app!)
-            listen-devtools! |k dispatch!
-            set-before-unload! $ fn (event) (persist-storage!)
-            add-event-listener! |visibilitychange $ fn (event)
-              match (visibility-state)
-                (:hidden) (persist-storage!)
-                _ &unit
-            set-interval! persist-storage! 60000
             match
               storage-get $ :storage-key config/site
               (:some raw)
@@ -105,8 +104,27 @@
                   schema/decode-store $ parse-cirru-edn raw
                   (:some stored)
                     dispatch! $ schema/Op :hydrate-storage stored
-                  (:none) (hud! |error "|Ignored invalid saved state")
+                  (:none)
+                    do (hud! |error "|Ignored invalid saved state")
+                      raise "|Invalid saved Markup state; original archive retained"
               (:none) &unit
+            render-app!
+            add-watch! *reel :changes $ fn (reel prev)
+              hint-fn $ {} (:return 'Unit)
+                :args $ [] (:: 'reel.typed/State 'app.schema/Op 'app.schema/Store) (:: 'reel.typed/State 'app.schema/Op 'app.schema/Store)
+              render-app!
+            listen-devtools! |k dispatch!
+            set-before-unload! $ fn (event)
+              hint-fn $ {} (:return 'Unit)
+                :args $ [] 'js-ffi.browser/EventHost
+              persist-storage!
+            add-event-listener! |visibilitychange $ fn (event)
+              hint-fn $ {} (:return 'Unit)
+                :args $ [] 'js-ffi.browser/EventHost
+              match (visibility-state)
+                (:hidden) (persist-storage!)
+                _ &unit
+            set-interval! persist-storage! 60000
             println "|App started."
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
@@ -114,7 +132,7 @@
             :features $ #{} :js-ffi
         'mount-target $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def mount-target
-            option:unwrap $ query-selector |.app
+            .unwrap $ query-selector |.app
           :examples $ []
           :schema $ :: 'respo.dom/DomElement
         'persist-storage! $ %{} 'CodeEntry (:doc |)
@@ -130,7 +148,10 @@
           :code $ quote $ defn reload! ()
             if (nil? build-errors)
               do (remove-watch! *reel :changes) (clear-cache!)
-                add-watch! *reel :changes $ fn (reel prev) (render-app!)
+                add-watch! *reel :changes $ fn (reel prev)
+                  hint-fn $ {} (:return 'Unit)
+                    :args $ [] (:: 'reel.typed/State 'app.schema/Op 'app.schema/Store) (:: 'reel.typed/State 'app.schema/Op 'app.schema/Store)
+                  render-app!
                 reset! *reel $ typed/refresh updater @*reel schema/store
                 hud! |ok~ |Ok
               hud! |error build-errors
@@ -143,6 +164,8 @@
           :code $ quote $ defn render-app! ()
             render! mount-target (comp-container @*reel)
               fn (op)
+                hint-fn $ {} (:return 'Unit)
+                  :args $ [] 'Dynamic
                 if (enum? op) (dispatch! op) (raise "|Expected Markup operation Enum")
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
