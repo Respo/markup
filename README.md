@@ -10,17 +10,18 @@ Demo http://repo.respo-mvc.org/markup/ .
 旧页面升级后请完整刷新一次，以加载配对的运行时和正式模块。
 这仍是现有 Demo，不新增 Markdown 解析或编辑功能。
 
-当前CLI/procs配对正式 **0.30.1**，依赖同步正式Respo `0.16.126`、UI `0.8.1`、
-Reel `0.6.42`、JS-FFI `0.2.6`，传递Router `0.8.38`，Vite 固定 `8.3.3`。请重新安装完整图并生成JS，
-不混装旧alpha缓存；Content/Run合同、快捷键及存档格式/key不变，UI 升级可能有样式差异。
-本轮迁移两处旧 Option 调用及静态高度写法，按真实生产者补充事件/watcher 合同。
-启动调整为先恢复存档，再渲染和注册保存；解析或解码失败会停止启动并保留原值，
-解码失败仍显示原 HUD 提示，不自动清空、修复或回退。坏存档恢复 UI 尚未实现，可能停留在空白页。
-已有 reload 成功/报错 HUD 保留，不替换为 raise；原三项业务测试保留，不新增预算或验证脚本。
-移除旧 procs 安装预批准，正式图使用普通安装策略。
-保留尚未发布的0.0.5候选，本轮不发布tag/npm、不合并或部署Demo。
-Caps 0.1.1、Node.js 24、Yarn 4.18.0。下文类型/存档修复属于之前已合并的源码迁移，
-不将其alpha.5测试或浏览器结果当作本次正式图的新验收。
+当前 CLI/procs 配对正式 **0.31.0**，依赖固定到已发布的 Respo `0.17.0-alpha.4`、
+UI `0.9.0-alpha.4`、Reel `0.7.0-alpha.4`、JS-FFI `0.2.7`，传递 Router `0.9.0-alpha.3`。
+UI 图仍包含 alpha 版本，请重新安装完整依赖并生成 JS，避免混用旧缓存。
+Content/Run、快捷键及存档 key 保持不变，UI 升级可能有样式差异。
+
+0.31 迁移显式绑定 Respo 的入口事件类型，并在发送状态事件前检查游标确为 List。
+本地 Store 保留原对象；旧存档中的同名外部 Struct 先转为 Map，经字段校验后重建本地 Store。
+名称仅用于选择解码路径，不代表名义身份或可信来源。保留原三项业务测试。
+启动仍先恢复存档，再渲染和注册保存；解析或解码失败会停止启动并保留原值。
+解码失败和 reload 的 HUD 提示保持原行为，坏存档恢复 UI 尚未实现。
+
+Caps 0.1.1、Node.js 24、Yarn 4.18.0。项目版本仍为尚未发布的 0.0.5 候选。
 Canonical source and dependencies are `calcit.cirru` and `deps.cirru`;
 retired compact/package snapshots are not used. Edit source with the Calcit CLI.
 
