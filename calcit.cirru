@@ -6,7 +6,7 @@
     {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!) (:target :browser)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/ |js-ffi/
-      :type-slots $ {}
+      :type-slots $ {} $ :dispatch-op |app.schema/DispatchOp
   :files $ {}
     'app.comp.container $ %{} 'FileEntry
       :defs $ {} $ 'comp-container
@@ -15,7 +15,10 @@
             let
                 store $ :store reel
                 states $ :states store
-                cursor $ or (reel-schema/read-field states :cursor) []
+                cursor $ match (get states :cursor)
+                  (:none) ([])
+                  (:some value)
+                    if (list? value) value $ raise "|Expected List cursor"
                 state $ or (reel-schema/read-field states :data)
                   {} $ :content |
               div
@@ -188,6 +191,10 @@
             respo.ffi.browser :refer $ query-selector
     'app.schema $ %{} 'FileEntry
       :defs $ {}
+        'DispatchOp $ %{} 'CodeEntry (:doc "|Respo 入口事件合同，容纳应用和 Reel 控制事件；代表值不发送。")
+          :code $ quote $ def DispatchOp (:: :unhandled)
+          :examples $ []
+          :schema $ :: 'Enum
         'Op $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defenum Op
             :states (:: 'List 'Dynamic) 'Dynamic
@@ -221,12 +228,11 @@
             let
                 result $ if (struct? data)
                   struct-match data
-                    Store stored $ match (struct-definition stored)
-                      (:some definition)
-                        if (identical? definition Store) (Result :ok stored)
-                          try-decode-map-as (&struct:to-map stored) 'app.schema/Store
-                      (:none) (Result :err "|Expected nominal Markup Store")
-                    _ _ $ Result :err "|Expected Markup Store"
+                    Store stored $ Result :ok stored
+                    _ external $ if
+                      = (&struct:get-name external) :Store
+                      try-decode-map-as (&struct:to-map external) 'app.schema/Store
+                      Result :err "|Expected Markup Store"
                   try-decode-map-as data 'app.schema/Store
               match result
                 (:ok stored)
