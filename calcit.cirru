@@ -29,10 +29,9 @@
                   :class-name $ str-spaced css/expand css/textarea
                   :style $ {} $ :height |320px
                   :on-input $ fn (e d!)
-                    hint-fn $ {} (:return 'Unit)
-                      :args $ [] (:: 'Map 'Tag 'Dynamic)
-                        :: 'Fn $ {} (:rest 'Dynamic) (:return 'Unit)
-                          :args $ [] 'Dynamic
+                    hint-fn $ Fn (Map Tag Dynamic)
+                      Fn Dynamic & Dynamic $ -> Unit
+                      -> Unit
                     d! $ schema/Op :states cursor $ assoc state :content (reel-schema/read-field e :value)
                 =< 8 $ {}
                 div
@@ -41,15 +40,13 @@
                   =< |8px $ {}
                   button $ {} (:class-name css/button) (:inner-text |Run)
                     :on-click $ fn (e d!)
-                      hint-fn $ {} (:return 'Unit)
-                        :args $ [] (:: 'Map 'Tag 'Dynamic)
-                          :: 'Fn $ {} (:rest 'Dynamic) (:return 'Unit)
-                            :args $ [] 'Dynamic
+                      hint-fn $ Fn (Map Tag Dynamic)
+                        Fn Dynamic & Dynamic $ -> Unit
+                        -> Unit
                       println $ reel-schema/read-field state :content
                 when dev? $ comp-typed-reel (>> states :reel) reel $ {}
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
-            :args $ [] $ :: 'reel.typed/State 'app.schema/Op 'app.schema/Store
+          :schema $ quote $ Fn (reel.typed/State app.schema/Op app.schema/Store) (-> respo.schema/Component)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.container
           :require (respo-ui.css :as css)
@@ -65,16 +62,16 @@
         'Site $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Site (:storage-key 'String)
           :examples $ []
-          :schema $ :: 'StructDef
+          :schema $ quote StructDef
         'dev? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def dev?
             = |dev $ .unwrap-or (get-env |mode) |release
           :examples $ []
-          :schema $ :: 'Bool
+          :schema $ quote Bool
         'site $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def site (Site :storage-key |workflow)
           :examples $ []
-          :schema $ :: 'app.config/Site
+          :schema $ quote app.config/Site
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.config
     'app.main $ %{} 'FileEntry
@@ -82,7 +79,7 @@
         '*reel $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *reel (typed/new-reel schema/store)
           :examples $ []
-          :schema $ :: 'Ref $ :: 'reel.typed/State 'app.schema/Op 'app.schema/Store
+          :schema $ quote $ Ref (reel.typed/State app.schema/Op app.schema/Store)
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op)
             when config/dev? $ js/console.log |Dispatch: op
@@ -93,9 +90,7 @@
                   :timestamp $ date-now-snapshot
             , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ [] 'Enum
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn Enum (-> Unit) (:features :js-ffi)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             println "|Running mode:" $ if config/dev? |dev |release
@@ -113,67 +108,54 @@
               (:none) &unit
             render-app!
             add-watch! *reel :changes $ fn (reel prev)
-              hint-fn $ {} (:return 'Unit)
-                :args $ [] (:: 'reel.typed/State 'app.schema/Op 'app.schema/Store) (:: 'reel.typed/State 'app.schema/Op 'app.schema/Store)
+              hint-fn $ Fn (reel.typed/State app.schema/Op app.schema/Store) (reel.typed/State app.schema/Op app.schema/Store) (-> Unit)
               render-app!
             listen-devtools! |k dispatch!
             set-before-unload! $ fn (event)
-              hint-fn $ {} (:return 'Unit)
-                :args $ [] 'js-ffi.browser/EventHost
+              hint-fn $ Fn js-ffi.browser/EventHost $ -> Unit
               persist-storage!
             add-event-listener! |visibilitychange $ fn (event)
-              hint-fn $ {} (:return 'Unit)
-                :args $ [] 'js-ffi.browser/EventHost
+              hint-fn $ Fn js-ffi.browser/EventHost $ -> Unit
               match (visibility-state)
                 (:hidden) (persist-storage!)
                 _ &unit
             set-interval! persist-storage! 60000
             println "|App started."
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
         'mount-target $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def mount-target
             .unwrap $ query-selector |.app
           :examples $ []
-          :schema $ :: 'respo.dom/DomElement
+          :schema $ quote respo.dom/DomElement
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-storage! ()
             println "|Saved at" $ :iso $ date-now-snapshot
             storage-set! (:storage-key config/site)
               format-cirru-edn $ :store @*reel
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if (nil? build-errors)
               do (remove-watch! *reel :changes) (clear-cache!)
                 add-watch! *reel :changes $ fn (reel prev)
-                  hint-fn $ {} (:return 'Unit)
-                    :args $ [] (:: 'reel.typed/State 'app.schema/Op 'app.schema/Store) (:: 'reel.typed/State 'app.schema/Op 'app.schema/Store)
+                  hint-fn $ Fn (reel.typed/State app.schema/Op app.schema/Store) (reel.typed/State app.schema/Op app.schema/Store) (-> Unit)
                   render-app!
                 reset! *reel $ typed/refresh updater @*reel schema/store
                 hud! |ok~ |Ok
               hud! |error build-errors
             , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
             render! mount-target (comp-container @*reel)
               fn (op)
-                hint-fn $ {} (:return 'Unit)
-                  :args $ [] 'Dynamic
+                hint-fn $ Fn Dynamic $ -> Unit
                 if (enum? op) (dispatch! op) (raise "|Expected Markup operation Enum")
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.main
           :require
@@ -194,18 +176,20 @@
         'DispatchOp $ %{} 'CodeEntry (:doc "|Respo 入口事件合同，容纳应用和 Reel 控制事件；代表值不发送。")
           :code $ quote $ def DispatchOp (:: :unhandled)
           :examples $ []
-          :schema $ :: 'Enum
+          :schema $ quote Enum
         'Op $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defenum Op
-            :states (:: 'List 'Dynamic) 'Dynamic
+            :states
+              quote $ List Dynamic
+              , 'Dynamic
             :hydrate-storage 'app.schema/Store
           :examples $ []
-          :schema $ :: 'EnumDef
+          :schema $ quote EnumDef
         'Store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Store
-            :states $ :: 'Map 'Dynamic 'Dynamic
+            :states $ quote $ Map Dynamic Dynamic
           :examples $ []
-          :schema $ :: 'StructDef
+          :schema $ quote StructDef
         'decode-op $ %{} 'CodeEntry
           :doc "|将 Respo/Reel 传入的单 Enum 规范为应用 Op，检查游标列表与存档载荷；不直接断言 nominal 类型。"
           :code $ quote $ defn decode-op (op)
@@ -220,8 +204,7 @@
                   (:none) (raise "|Invalid saved Markup state")
               _ $ raise "|Unknown Markup operation"
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'app.schema/Op)
-            :args $ [] 'Enum
+          :schema $ quote $ Fn Enum (-> app.schema/Op)
         'decode-store $ %{} 'CodeEntry
           :doc "|本地存档/旧存档的开放入口：已有 Store 保留身份，Map 验证后构造成 Store。states 是应用与 Reel 共用的异构 UI 状态树，不伪装成泛型关系。"
           :code $ quote $ defn decode-store (data)
@@ -242,14 +225,13 @@
                       if (list? cursor) (Option :some stored) (Option :none)
                 (:err message) (Option :none)
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] 'Dynamic
-            :return $ :: 'Option 'app.schema/Store
+          :schema $ quote $ Fn Dynamic
+            -> $ Option app.schema/Store
         'store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def store
             Store :states $ {} $ :cursor ([])
           :examples $ []
-          :schema $ :: 'app.schema/Store
+          :schema $ quote app.schema/Store
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.schema
     'app.updater $ %{} 'FileEntry
@@ -263,8 +245,7 @@
                   :: 'Map 'Dynamic 'Dynamic
               (:hydrate-storage data) data
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'app.schema/Store)
-            :args $ [] 'app.schema/Store 'app.schema/Op 'String 'Number
+          :schema $ quote $ Fn app.schema/Store app.schema/Op String Number (-> app.schema/Store)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
           :require $ respo.cursor :refer $ update-state-tree
