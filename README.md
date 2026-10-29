@@ -10,9 +10,13 @@ Demo http://repo.respo-mvc.org/markup/ .
 旧页面升级后请完整刷新一次，以加载配对的运行时和正式模块。
 这仍是现有 Demo，不新增 Markdown 解析或编辑功能。
 
-当前 CLI/procs 配对正式 **0.31.0**，依赖固定到已发布的 Respo `0.17.0-alpha.4`、
-UI `0.9.0-alpha.4`、Reel `0.7.0-alpha.4`、JS-FFI `0.2.7`，传递 Router `0.9.0-alpha.3`。
-UI 图仍包含 alpha 版本，请重新安装完整依赖并生成 JS，避免混用旧缓存。
+当前 CLI/procs 配对正式 **0.32.1**，依赖固定到已发布的 Respo `0.17.1`、
+UI `0.9.0`、Reel `0.7.0-alpha.5`、JS-FFI `0.2.9`，传递 Router `0.9.0-alpha.4`。
+类型标注经官方 formatter 迁移；Snapshot 与原 main 经同一 formatter 规范化后的结果相同，
+运行代码、公开合同、三项原测试、存档校验和 HUD 不变，不新增强转或放宽门禁。
+本轮 all-defs 210 项、完整 strict、原三项 Node 回归、immutable/toolchain、文档与构建通过；
+实际首屏/刷新无 warn/error，本轮未复验编辑、存档浏览器恢复或 HMR。
+Reel/Router 仍为已发布 alpha，请重新安装完整依赖并生成 JS，避免混用旧缓存。
 Content/Run、快捷键及存档 key 保持不变，UI 升级可能有样式差异。
 
 0.31 迁移显式绑定 Respo 的入口事件类型，并在发送状态事件前检查游标确为 List。
@@ -55,7 +59,7 @@ keeps its original source and destination; PRs do not deploy to the server.
 
 同一 PR 的上传使用独立队列，生产上传使用另一个队列；保留排队任务，
 不取消正在执行的上传。每次运行及重试使用不同预览路径，生产路径不变。
-Action 固定到正式 v1.2.0 的已审查提交，验证由 Action 内置能力完成。
+Action 使用精确正式 tag v1.2.0，验证由 Action 内置能力完成。
 
 部署路径、COS 内置 verify 和前端/服务端边界不变。PR 不合并或自动部署生产。
 
