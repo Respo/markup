@@ -19,48 +19,53 @@
                   (:none) ([])
                   (:some value)
                     if (list? value) value $ raise "|Expected List cursor"
-                state $ or (reel-schema/read-field states :data)
+                state $ or
+                  .unwrap-or (get states :data) nil
                   {} $ :content |
+                content $ .unwrap-or
+                  get
+                    if (struct? state) (&struct:to-map state) (decode-map-as state 'Map)
+                    , :content
+                  , nil
               div
                 {} $ :class-name $ str-spaced css/global css/row
-                textarea $ {}
-                  :value $ reel-schema/read-field state :content
-                  :placeholder |Content
+                textarea $ {} (:value content) (:placeholder |Content)
                   :class-name $ str-spaced css/expand css/textarea
                   :style $ {} $ :height |320px
                   :on-input $ fn (e d!)
-                    hint-fn $ Fn (Map Tag Dynamic)
-                      Fn Dynamic & Dynamic $ -> Unit
+                    hint-fn $ Fn respo.schema/RespoEvent
+                      Fn Enum $ -> Unit
                       -> Unit
-                    d! $ schema/Op :states cursor $ assoc state :content (reel-schema/read-field e :value)
-                =< 8 $ {}
+                    d! $ schema/Op :states cursor $ assoc state :content (event-value e)
+                space-x 8
                 div
                   {} $ :class-name css/expand
                   <> "|This is some content with `code`"
-                  =< |8px $ {}
+                  space-x |8px
                   button $ {} (:class-name css/button) (:inner-text |Run)
                     :on-click $ fn (e d!)
-                      hint-fn $ Fn (Map Tag Dynamic)
-                        Fn Dynamic & Dynamic $ -> Unit
+                      hint-fn $ Fn respo.schema/RespoEvent
+                        Fn Enum $ -> Unit
                         -> Unit
-                      println $ reel-schema/read-field state :content
-                when dev? $ comp-typed-reel (>> states :reel) reel $ {}
+                      println content
+                if dev?
+                  Option :some $ comp-typed-reel (>> states :reel) reel $ {}
+                  Option :none
           :examples $ []
           :schema $ quote $ Fn (reel.typed/State app.schema/Op app.schema/Store) (-> respo.schema/Component)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.container
           :require (respo-ui.css :as css)
             respo.css :refer $ defstyle
-            respo.core :refer $ defcomp defeffect <> >> div button textarea span input
-            respo.comp.space :refer $ =<
+            respo.core :refer $ defcomp defeffect <> >> div button textarea span input event-value
+            respo.comp.space :refer $ space-x
             reel.comp.reel :refer $ comp-typed-reel
-            reel.schema :as reel-schema
             app.config :refer $ dev?
             app.schema :as schema
     'app.config $ %{} 'FileEntry
       :defs $ {}
         'Site $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defstruct Site (:storage-key 'String)
+          :code $ quote $ defstruct Site (:storage-key String)
           :examples $ []
           :schema $ quote StructDef
         'dev? $ %{} 'CodeEntry (:doc |)
@@ -150,7 +155,7 @@
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
-            render! mount-target (comp-container @*reel)
+            with-memo-frame $ fn () $ render! mount-target (comp-container @*reel)
               fn (op)
                 hint-fn $ Fn Dynamic $ -> Unit
                 if (enum? op) (dispatch! op) (raise "|Expected Markup operation Enum")
@@ -171,6 +176,7 @@
             reel.typed :as typed
             js-ffi.browser :refer $ add-event-listener! set-before-unload! set-interval! storage-get storage-set! visibility-state
             respo.ffi.browser :refer $ query-selector
+            respo.memo :refer $ with-memo-frame
     'app.schema $ %{} 'FileEntry
       :defs $ {}
         'DispatchOp $ %{} 'CodeEntry (:doc "|Respo 入口事件合同，容纳应用和 Reel 控制事件；代表值不发送。")
@@ -181,8 +187,8 @@
           :code $ quote $ defenum Op
             :states
               quote $ List Dynamic
-              , 'Dynamic
-            :hydrate-storage 'app.schema/Store
+              , Dynamic
+            :hydrate-storage app.schema/Store
           :examples $ []
           :schema $ quote EnumDef
         'Store $ %{} 'CodeEntry (:doc |)
@@ -196,7 +202,7 @@
             match op
               (:states cursor data)
                 Op :states
-                  decode-map-as cursor $ :: 'List 'Dynamic
+                  decode-map-as cursor $ quote $ List Dynamic
                   , data
               (:hydrate-storage data)
                 match (decode-store data)
@@ -242,7 +248,7 @@
               (:states cursor s)
                 assoc store :states $ decode-map-as
                   update-state-tree (:states store) cursor s
-                  :: 'Map 'Dynamic 'Dynamic
+                  quote $ Map Dynamic Dynamic
               (:hydrate-storage data) data
           :examples $ []
           :schema $ quote $ Fn app.schema/Store app.schema/Op String Number (-> app.schema/Store)
