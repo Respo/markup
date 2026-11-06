@@ -18,7 +18,10 @@
                 cursor $ match (get states :cursor)
                   (:none) ([])
                   (:some value)
-                    if (list? value) value $ raise "|Expected List cursor"
+                    match
+                      try-decode-map-as value $ List respo.schema/CoordKey
+                      (:ok checked) checked
+                      (:err _) (raise "|Expected List cursor")
                 state $ or
                   .unwrap-or (get states :data) nil
                   {} $ :content |
@@ -34,7 +37,7 @@
                   :style $ {} $ :height |320px
                   :on-input $ fn (e d!)
                     hint-fn $ Fn respo.schema/RespoEvent
-                      Fn Enum $ -> Unit
+                      Fn AnyEnum $ -> Unit
                       -> Unit
                     d! $ schema/Op :states cursor $ assoc state :content (event-value e)
                 space-x 8
@@ -45,7 +48,7 @@
                   button $ {} (:class-name css/button) (:inner-text |Run)
                     :on-click $ fn (e d!)
                       hint-fn $ Fn respo.schema/RespoEvent
-                        Fn Enum $ -> Unit
+                        Fn AnyEnum $ -> Unit
                         -> Unit
                       println content
                 if dev?
@@ -95,7 +98,7 @@
                   :timestamp $ date-now-snapshot
             , &unit
           :examples $ []
-          :schema $ quote $ Fn Enum (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn AnyEnum (-> Unit) (:features :js-ffi)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             println "|Running mode:" $ if config/dev? |dev |release
@@ -182,18 +185,16 @@
         'DispatchOp $ %{} 'CodeEntry (:doc "|Respo 入口事件合同，容纳应用和 Reel 控制事件；代表值不发送。")
           :code $ quote $ def DispatchOp (:: :unhandled)
           :examples $ []
-          :schema $ quote Enum
+          :schema $ quote AnyEnum
         'Op $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defenum Op
-            :states
-              quote $ List Dynamic
-              , Dynamic
+            :states (List respo.schema/CoordKey) Dynamic
             :hydrate-storage app.schema/Store
           :examples $ []
           :schema $ quote EnumDef
         'Store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Store
-            :states $ quote $ Map Dynamic Dynamic
+            :states $ Map Dynamic Dynamic
           :examples $ []
           :schema $ quote StructDef
         'decode-op $ %{} 'CodeEntry
@@ -202,7 +203,7 @@
             match op
               (:states cursor data)
                 Op :states
-                  decode-map-as cursor $ quote $ List Dynamic
+                  decode-map-as cursor $ List respo.schema/CoordKey
                   , data
               (:hydrate-storage data)
                 match (decode-store data)
@@ -210,7 +211,7 @@
                   (:none) (raise "|Invalid saved Markup state")
               _ $ raise "|Unknown Markup operation"
           :examples $ []
-          :schema $ quote $ Fn Enum (-> app.schema/Op)
+          :schema $ quote $ Fn AnyEnum (-> app.schema/Op)
         'decode-store $ %{} 'CodeEntry
           :doc "|本地存档/旧存档的开放入口：已有 Store 保留身份，Map 验证后构造成 Store。states 是应用与 Reel 共用的异构 UI 状态树，不伪装成泛型关系。"
           :code $ quote $ defn decode-store (data)
@@ -228,7 +229,10 @@
                   match (get stored.:states :cursor)
                     (:none) (Option :some stored)
                     (:some cursor)
-                      if (list? cursor) (Option :some stored) (Option :none)
+                      match
+                        try-decode-map-as cursor $ List respo.schema/CoordKey
+                        (:ok _) (Option :some stored)
+                        (:err _) (Option :none)
                 (:err message) (Option :none)
           :examples $ []
           :schema $ quote $ Fn Dynamic
@@ -248,7 +252,7 @@
               (:states cursor s)
                 assoc store :states $ decode-map-as
                   update-state-tree (:states store) cursor s
-                  quote $ Map Dynamic Dynamic
+                  Map Dynamic Dynamic
               (:hydrate-storage data) data
           :examples $ []
           :schema $ quote $ Fn app.schema/Store app.schema/Op String Number (-> app.schema/Store)

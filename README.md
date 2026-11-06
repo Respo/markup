@@ -6,24 +6,24 @@ Demo http://repo.respo-mvc.org/markup/ .
 
 ### Usages
 
-本次候选 **0.0.5** 配对正式 Calcit / `@calcit/procs` **0.34.2**。
+本次候选 **0.0.5** 配对正式 Calcit / `@calcit/procs` **0.35.1**。
 消费者需重新安装完整依赖图、生成 JS 并完整刷新页面。Content 输入、Run、Reel 调试工具、
 存档 key 和格式保持；Demo 不新增 Markdown 解析功能。UI/Reel 跨 minor 升级可能有样式差异。
 0.0.5 尚未发布，正式 tag 出现前不要将本分支当作已发布依赖。
 
-依赖使用已发布的 Respo **0.19.2**、UI **0.14.1**、Reel **0.9.0**、JS-FFI **0.2.10**，
-传递 Router **0.11.2**；不再使用 Reel / Router 的旧 alpha 图。
+依赖使用已发布的 Respo **0.19.4**、UI **0.15.1**、Reel **0.9.2**、JS-FFI **0.2.13**，
+传递 Router **0.12.1**；不再使用 Reel / Router 的旧 alpha 图。
 两个 DOM 回调使用真实 RespoEvent 和单 Enum dispatch，输入值由公开 `event-value` 检查为 String。
 原 Reel 的 `read-field` 已删除；此处直接读取数据，保留 Map/Struct 字段读取及缺失值语义。
 两个间隔分别保持 8 / 8px，开发态子节点显式使用 Option。
 根渲染和原 SSR 回归均按 Respo 的公开 managed memo frame 合同包住构造与渲染。
 
-应用 Op 与 Store 仍为原名义类型。开放 Enum 分发入口必须检查后转为 Op；它也承载 Reel 控制事件。
+应用 Op 与 Store 仍为原名义类型。开放 `AnyEnum` 分发入口必须检查后转为 Op；它也承载 Reel 控制事件。
 Store.states 是应用与 Reel 共用的真实异构状态树，继续保留 Map Dynamic Dynamic；不以含 Dynamic
 的 union 或伪泛型隐藏该边界。固定 Site 已是具体 Struct，不为本次升级引入无实际需要的 union。
 
 启动仍先恢复成功，再渲染并注册保存。已有本地 Store 保留身份；旧同名外部 Struct 转为 Map，
-验证后重建本地 Store，名称不代表来源或授权。游标只接受缺失或实际 List。
+验证后重建本地 Store，名称不代表来源或授权。游标可缺失；存在时须是由 Tag、字符串或数字组成的列表。
 解析异常会停止启动并保留原存档，但不会显示此处的 HUD 提示；
 只有 `decode-store` 返回 :none 时才显示原 HUD 错误，然后停止启动。坏存档恢复 UI 尚未实现。
 
