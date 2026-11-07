@@ -6,7 +6,7 @@
     {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!) (:target :browser)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/ |js-ffi/
-      :type-slots $ {} $ :dispatch-op |app.schema/DispatchOp
+      :type-slots $ {} $ :dispatch-op 'app.schema/DispatchOp
   :files $ {}
     'app.comp.container $ %{} 'FileEntry
       :defs $ {} $ 'comp-container
@@ -22,14 +22,16 @@
                       try-decode-map-as value $ List respo.schema/CoordKey
                       (:ok checked) checked
                       (:err _) (raise "|Expected List cursor")
-                state $ or
-                  .unwrap-or (get states :data) nil
-                  {} $ :content |
-                content $ .unwrap-or
-                  get
+                state $ match (get states :data)
+                  (:some value)
+                    or value $ {} $ :content |
+                  (:none)
+                    {} $ :content |
+                content $ .unwrap $ get
+                  &merge
+                    {} $ :content nil
                     if (struct? state) (&struct:to-map state) (decode-map-as state 'Map)
-                    , :content
-                  , nil
+                  , :content
               div
                 {} $ :class-name $ str-spaced css/global css/row
                 textarea $ {} (:value content) (:placeholder |Content)
@@ -37,7 +39,7 @@
                   :style $ {} $ :height |320px
                   :on-input $ fn (e d!)
                     hint-fn $ Fn respo.schema/RespoEvent
-                      Fn AnyEnum $ -> Unit
+                      Fn app.schema/Op $ -> Unit
                       -> Unit
                     d! $ schema/Op :states cursor $ assoc state :content (event-value e)
                 space-x 8
@@ -48,7 +50,7 @@
                   button $ {} (:class-name css/button) (:inner-text |Run)
                     :on-click $ fn (e d!)
                       hint-fn $ Fn respo.schema/RespoEvent
-                        Fn AnyEnum $ -> Unit
+                        Fn app.schema/Op $ -> Unit
                         -> Unit
                       println content
                 if dev?
@@ -160,7 +162,7 @@
           :code $ quote $ defn render-app! ()
             with-memo-frame $ fn () $ render! mount-target (comp-container @*reel)
               fn (op)
-                hint-fn $ Fn Dynamic $ -> Unit
+                hint-fn $ Fn AnyEnum $ -> Unit
                 if (enum? op) (dispatch! op) (raise "|Expected Markup operation Enum")
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
