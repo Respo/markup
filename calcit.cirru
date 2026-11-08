@@ -6,12 +6,12 @@
     {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!) (:target :browser)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/ |js-ffi/
-      :type-slots $ {} $ :dispatch-op 'app.schema/DispatchOp
+      :type-slots $ {} $ :dispatch-op 'app.schema/Op
   :files $ {}
     'app.comp.container $ %{} 'FileEntry
       :defs $ {} $ 'comp-container
         %{} 'CodeEntry (:doc |)
-          :code $ quote $ defcomp comp-container (reel)
+          :code $ quote $ defcomp comp-container (reel on-control!)
             let
                 store $ :store reel
                 states $ :states store
@@ -54,10 +54,12 @@
                         -> Unit
                       println content
                 if dev?
-                  Option :some $ comp-typed-reel (>> states :reel) reel $ {}
+                  Option :some $ comp-typed-reel (>> states :reel) reel ({}) on-control!
                   Option :none
           :examples $ []
-          :schema $ quote $ Fn (reel.typed/State app.schema/Op app.schema/Store) (-> respo.schema/Component)
+          :schema $ quote $ Fn (reel.typed/State app.schema/Op app.schema/Store)
+            Fn reel.typed/Control $ -> Unit
+            -> respo.schema/Component
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.container
           :require (respo-ui.css :as css)
@@ -93,14 +95,11 @@
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op)
             when config/dev? $ js/console.log |Dispatch: op
-            reset! *reel $ match (typed/decode-control op)
-              (:some action) (typed/apply-control updater @*reel action)
-              (:none)
-                typed/record-op updater @*reel (schema/decode-op op) (generate-id!)
-                  :timestamp $ date-now-snapshot
+            reset! *reel $ typed/record-op updater @*reel op (generate-id!)
+              :timestamp $ date-now-snapshot
             , &unit
           :examples $ []
-          :schema $ quote $ Fn AnyEnum (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn app.schema/Op (-> Unit) (:features :js-ffi)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             println "|Running mode:" $ if config/dev? |dev |release
@@ -120,7 +119,7 @@
             add-watch! *reel :changes $ fn (reel prev)
               hint-fn $ Fn (reel.typed/State app.schema/Op app.schema/Store) (reel.typed/State app.schema/Op app.schema/Store) (-> Unit)
               render-app!
-            listen-devtools! |k dispatch!
+            listen-devtools! |k on-control!
             set-before-unload! $ fn (event)
               hint-fn $ Fn js-ffi.browser/EventHost $ -> Unit
               persist-storage!
@@ -138,6 +137,12 @@
             .unwrap $ query-selector |.app
           :examples $ []
           :schema $ quote respo.dom/DomElement
+        'on-control! $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn on-control! (control)
+            reset! *reel $ typed/apply-control updater @*reel control
+            , &unit
+          :examples $ []
+          :schema $ quote $ Fn reel.typed/Control (-> Unit)
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-storage! ()
             println "|Saved at" $ :iso $ date-now-snapshot
@@ -160,16 +165,15 @@
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
-            with-memo-frame $ fn () $ render! mount-target (comp-container @*reel)
-              fn (op)
-                hint-fn $ Fn AnyEnum $ -> Unit
-                if (enum? op) (dispatch! op) (raise "|Expected Markup operation Enum")
+            render-with! mount-target
+              fn () $ comp-container @*reel on-control!
+              , dispatch!
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.main
           :require
-            respo.core :refer $ render! clear-cache!
+            respo.core :refer $ render-with! clear-cache!
             app.comp.container :refer $ comp-container
             app.updater :refer $ updater
             app.schema :as schema
@@ -181,13 +185,8 @@
             reel.typed :as typed
             js-ffi.browser :refer $ add-event-listener! set-before-unload! set-interval! storage-get storage-set! visibility-state
             respo.ffi.browser :refer $ query-selector
-            respo.memo :refer $ with-memo-frame
     'app.schema $ %{} 'FileEntry
       :defs $ {}
-        'DispatchOp $ %{} 'CodeEntry (:doc "|Respo 入口事件合同，容纳应用和 Reel 控制事件；代表值不发送。")
-          :code $ quote $ def DispatchOp (:: :unhandled)
-          :examples $ []
-          :schema $ quote AnyEnum
         'Op $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defenum Op
             :states (List respo.schema/CoordKey) Dynamic
@@ -199,21 +198,6 @@
             :states $ Map Dynamic Dynamic
           :examples $ []
           :schema $ quote StructDef
-        'decode-op $ %{} 'CodeEntry
-          :doc "|将 Respo/Reel 传入的单 Enum 规范为应用 Op，检查游标列表与存档载荷；不直接断言 nominal 类型。"
-          :code $ quote $ defn decode-op (op)
-            match op
-              (:states cursor data)
-                Op :states
-                  decode-map-as cursor $ List respo.schema/CoordKey
-                  , data
-              (:hydrate-storage data)
-                match (decode-store data)
-                  (:some stored) (Op :hydrate-storage stored)
-                  (:none) (raise "|Invalid saved Markup state")
-              _ $ raise "|Unknown Markup operation"
-          :examples $ []
-          :schema $ quote $ Fn AnyEnum (-> app.schema/Op)
         'decode-store $ %{} 'CodeEntry
           :doc "|本地存档/旧存档的开放入口：已有 Store 保留身份，Map 验证后构造成 Store。states 是应用与 Reel 共用的异构 UI 状态树，不伪装成泛型关系。"
           :code $ quote $ defn decode-store (data)

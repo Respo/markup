@@ -4,12 +4,12 @@ import test from 'node:test';
 process.env.mode = 'dev';
 
 const { comp_container } = await import('../js-out/app.comp.container.mjs');
-const { store, decode_op, decode_store } = await import('../js-out/app.schema.mjs');
+const { Op, store, decode_store } = await import('../js-out/app.schema.mjs');
 const { updater } = await import('../js-out/app.updater.mjs');
 const { new_reel, toggle_display, record_op, refresh } = await import('../js-out/reel.typed.mjs');
 const { make_string } = await import('../js-out/respo.render.html.mjs');
 const { with_memo_frame } = await import('../js-out/respo.memo.mjs');
-const renderHtml = (reel) => with_memo_frame(() => make_string(comp_container(reel)));
+const renderHtml = (reel) => with_memo_frame(() => make_string(comp_container(reel, () => {})));
 const clt = await import('../js-out/calcit.core.mjs');
 
 // Fixed synthetic archive produced by the clean 0.27.0 tag's native formatter,
@@ -31,8 +31,9 @@ test('renders the typed Reel devtools with an empty history', () => {
 
 test('content edits survive Reel replay and the existing saved-state format', () => {
   const field = (value, key) => clt.get(value, clt.init_tags([key])[key]).extra[0];
-  const wire = clt.parse_cirru_edn(':: :states ([]) ({} (:content |中文🐈))');
-  const reel = record_op(updater, new_reel(store), decode_op(wire), 'edit', 1);
+  const t = clt.init_tags(['states', 'content']);
+  const edit = clt._PCT__$o__$o_(Op, t.states, clt._$L_(), clt._$n__$M_(t.content, '中文🐈'));
+  const reel = record_op(updater, new_reel(store), edit, 'edit', 1);
   const current = field(reel, 'store');
   assert.equal(field(field(field(current, 'states'), 'data'), 'content'), '中文🐈');
   assert.match(renderHtml(reel), /中文🐈/);
@@ -48,8 +49,9 @@ test('content edits survive Reel replay and the existing saved-state format', ()
 test('hydrates the fixed pre-upgrade archive through the typed Reel update path', () => {
   const field = (value, key) => clt.get(value, clt.init_tags([key])[key]).extra[0];
   const legacy = clt.parse_cirru_edn(PRE_031_ARCHIVE);
-  const hydrate = clt._$o__$o_(clt.init_tags(['hydrate-storage'])['hydrate-storage'], legacy);
-  const reel = record_op(updater, new_reel(store), decode_op(hydrate), 'legacy-archive', 1);
+  const stored = clt.option_$o_unwrap(decode_store(legacy));
+  const hydrate = clt._PCT__$o__$o_(Op, clt.init_tags(['hydrate-storage'])['hydrate-storage'], stored);
+  const reel = record_op(updater, new_reel(store), hydrate, 'legacy-archive', 1);
   const restored = field(reel, 'store');
   const expected = clt.assoc(store, clt.init_tags(['states']).states, field(legacy, 'states'));
   assert.equal(clt._$n__$e_(restored, expected), true);

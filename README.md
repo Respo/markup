@@ -6,19 +6,19 @@ Demo http://repo.respo-mvc.org/markup/ .
 
 ### Usages
 
-本次候选 **0.0.5** 配对正式 Calcit / `@calcit/procs` **0.37.0**。
+本次候选 **0.0.5** 配对正式 Calcit / `@calcit/procs` **0.38.0**。
 消费者需重新安装完整依赖图、生成 JS 并完整刷新页面。Content 输入、Run、Reel 调试工具、
 存档 key 和格式保持；Demo 不新增 Markdown 解析功能。UI/Reel 跨 minor 升级可能有样式差异。
 0.0.5 尚未发布，正式 tag 出现前不要将本分支当作已发布依赖。
 
-依赖使用已发布的 Respo **0.19.5**、UI **0.15.2**、Reel **0.10.0**、JS-FFI **0.2.13**，
+依赖使用已发布的 Respo **0.19.5**、UI **0.15.2**、Reel **0.11.0**、JS-FFI **0.2.13**，
 传递 Router **0.12.2**；不再使用 Reel / Router 的旧 alpha 图。
-两个 DOM 回调使用真实 RespoEvent 和单 Enum dispatch，输入值由公开 `event-value` 检查为 String。
+编辑回调派发具体 `Op`，Reel 0.11.0 面板与快捷键通过独立回调传递 `Control`。输入值由公开 `event-value` 检查为 String。
 原 Reel 的 `read-field` 已删除；此处直接读取数据，保留 Map/Struct 字段读取及缺失值语义。
 两个间隔分别保持 8 / 8px，开发态子节点显式使用 Option。
 根渲染和原 SSR 回归均按 Respo 的公开 managed memo frame 合同包住构造与渲染。
 
-应用 Op 与 Store 仍为原名义类型。开放 `AnyEnum` 分发入口必须检查后转为 Op；它也承载 Reel 控制事件。
+应用 Op 与 Store 仍为原名义类型。存档继续在构造 `Op :hydrate-storage` 前独立校验。
 Store.states 是应用与 Reel 共用的真实异构状态树，继续保留 Map Dynamic Dynamic；不以含 Dynamic
 的 union 或伪泛型隐藏该边界。固定 Site 已是具体 Struct，不为本次升级引入无实际需要的 union。
 
@@ -50,13 +50,13 @@ yarn vite
 Frontend build uses `VITE_BASE_URL`, pointing to
 `https://cos-sh.tiye.me/Respo/markup/` on main and
 `https://cos-sh.tiye.me/Respo/markup/pr/<number>/<run-id>/<attempt>/` for PR previews.
-COS action v1.2.0 uploads `dist` and verifies through `public-base-url`;
+COS action v1.3.0 uploads `dist` and verifies through `public-base-url`;
 no separate upload verification script is needed. Production server deployment
 keeps its original source and destination; PRs do not deploy to the server.
 
 同一 PR 的上传使用独立队列，生产上传使用另一个队列；保留排队任务，
 不取消正在执行的上传。每次运行及重试使用不同预览路径，生产路径不变。
-Action 使用精确正式 tag v1.2.0，验证由 Action 内置能力完成。
+Action 使用精确正式 tag v1.3.0，验证由 Action 内置能力完成。
 
 部署路径、COS 内置 verify 和前端/服务端边界不变。PR 不合并或自动部署生产。
 
