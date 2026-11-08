@@ -6,13 +6,13 @@ Demo http://repo.respo-mvc.org/markup/ .
 
 ### Usages
 
-本次候选 **0.0.5** 配对正式 Calcit / `@calcit/procs` **0.35.1**。
+本次候选 **0.0.5** 配对正式 Calcit / `@calcit/procs` **0.37.0**。
 消费者需重新安装完整依赖图、生成 JS 并完整刷新页面。Content 输入、Run、Reel 调试工具、
 存档 key 和格式保持；Demo 不新增 Markdown 解析功能。UI/Reel 跨 minor 升级可能有样式差异。
 0.0.5 尚未发布，正式 tag 出现前不要将本分支当作已发布依赖。
 
-依赖使用已发布的 Respo **0.19.4**、UI **0.15.1**、Reel **0.9.2**、JS-FFI **0.2.13**，
-传递 Router **0.12.1**；不再使用 Reel / Router 的旧 alpha 图。
+依赖使用已发布的 Respo **0.19.5**、UI **0.15.2**、Reel **0.10.0**、JS-FFI **0.2.13**，
+传递 Router **0.12.2**；不再使用 Reel / Router 的旧 alpha 图。
 两个 DOM 回调使用真实 RespoEvent 和单 Enum dispatch，输入值由公开 `event-value` 检查为 String。
 原 Reel 的 `read-field` 已删除；此处直接读取数据，保留 Map/Struct 字段读取及缺失值语义。
 两个间隔分别保持 8 / 8px，开发态子节点显式使用 Option。
