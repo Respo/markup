@@ -6,7 +6,7 @@ Demo http://repo.respo-mvc.org/markup/ .
 
 ### Usages
 
-本次候选 **0.0.5** 配对正式 Calcit / `@calcit/procs` **0.38.0**。
+本次候选 **0.0.5** 配对正式 Calcit / `@calcit/procs` **0.40.0**。
 消费者需重新安装完整依赖图、生成 JS 并完整刷新页面。Content 输入、Run、Reel 调试工具、
 存档 key 和格式保持；Demo 不新增 Markdown 解析功能。UI/Reel 跨 minor 升级可能有样式差异。
 0.0.5 尚未发布，正式 tag 出现前不要将本分支当作已发布依赖。
