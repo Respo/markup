@@ -36,7 +36,7 @@
                 textarea $ {}
                   :value $ match content
                     (:some value) value
-                    (:none) (Option :none)
+                    (:none) None
                   :placeholder |Content
                   :class-name $ str-spaced css/expand css/textarea
                   :style $ {} $ :height |320px
@@ -44,7 +44,7 @@
                     hint-fn $ Fn respo.schema/RespoEvent
                       Fn app.schema/Op $ -> Unit
                       -> Unit
-                    d! $ schema/Op :states cursor $ assoc state :content (event-value e)
+                    d! $ schema/Op :edit-content cursor state $ event-value e
                 space-x 8
                 div
                   {} $ :class-name css/expand
@@ -59,10 +59,10 @@
                         (:some value) (println value)
                         (:none) (println nil)
                 if dev?
-                  Option :some $ comp-typed-reel (>> states :reel) reel ({}) on-control!
-                  Option :none
+                  Some $ comp-typed-reel (>> states :reel) reel ({}) on-control!
+                  , None
           :examples $ []
-          :schema $ quote $ Fn (reel.typed/State app.schema/Op app.schema/Store)
+          :schema $ quote $ Fn (reel.typed/State schema/Op schema/Store)
             Fn reel.typed/Control $ -> Unit
             -> respo.schema/Component
       :ns $ %{} 'NsEntry (:doc |)
@@ -88,7 +88,7 @@
         'site $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def site (Site :storage-key |workflow)
           :examples $ []
-          :schema $ quote app.config/Site
+          :schema $ quote Site
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.config
     'app.main $ %{} 'FileEntry
@@ -96,7 +96,7 @@
         '*reel $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *reel (typed/new-reel schema/store)
           :examples $ []
-          :schema $ quote $ Ref (reel.typed/State app.schema/Op app.schema/Store)
+          :schema $ quote $ Ref (typed/State schema/Op schema/Store)
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op)
             when config/dev? $ js/console.log |Dispatch: op
@@ -104,7 +104,7 @@
               :timestamp $ date-now-snapshot
             , &unit
           :examples $ []
-          :schema $ quote $ Fn app.schema/Op (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn schema/Op (-> Unit) (:features :js-ffi)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             println "|Running mode:" $ if config/dev? |dev |release
@@ -147,7 +147,7 @@
             reset! *reel $ typed/apply-control updater @*reel control
             , &unit
           :examples $ []
-          :schema $ quote $ Fn reel.typed/Control (-> Unit)
+          :schema $ quote $ Fn typed/Control (-> Unit)
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-storage! ()
             println "|Saved at" $ :iso $ date-now-snapshot
@@ -194,7 +194,7 @@
       :defs $ {}
         'Op $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defenum Op
-            :states (List respo.schema/CoordKey) (Map Dynamic Dynamic)
+            :edit-content (List respo.schema/CoordKey) (Map Dynamic Dynamic) String
             :hydrate-storage app.schema/Store
           :examples $ []
           :schema $ quote EnumDef
@@ -218,21 +218,21 @@
               match result
                 (:ok stored)
                   match (get stored.:states :cursor)
-                    (:none) (Option :some stored)
+                    (:none) (Some stored)
                     (:some cursor)
                       match
                         try-decode-map-as cursor $ List respo.schema/CoordKey
-                        (:ok _) (Option :some stored)
-                        (:err _) (Option :none)
-                (:err message) (Option :none)
+                        (:ok _) (Some stored)
+                        (:err _) None
+                (:err message) None
           :examples $ []
           :schema $ quote $ Fn Dynamic
-            -> $ Option app.schema/Store
+            -> $ Option Store
         'store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def store
             Store :states $ {} $ :cursor ([])
           :examples $ []
-          :schema $ quote app.schema/Store
+          :schema $ quote Store
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.schema
     'app.updater $ %{} 'FileEntry
@@ -240,9 +240,9 @@
         %{} 'CodeEntry (:doc |)
           :code $ quote $ defn updater (store op op-id op-time)
             match op
-              (:states cursor s)
+              (:edit-content cursor previous content)
                 assoc store :states $ decode-map-as
-                  update-state-tree (:states store) cursor s
+                  update-state-tree (:states store) cursor $ assoc previous :content content
                   Map Dynamic Dynamic
               (:hydrate-storage data) data
           :examples $ []
