@@ -22,19 +22,22 @@
                       try-decode-map-as value $ List respo.schema/CoordKey
                       (:ok checked) checked
                       (:err _) (raise "|Expected List cursor")
-                state $ match (get states :data)
-                  (:some value)
-                    or value $ {} $ :content |
-                  (:none)
-                    {} $ :content |
-                content $ .unwrap $ get
-                  &merge
-                    {} $ :content nil
-                    if (struct? state) (&struct:to-map state) (decode-map-as state 'Map)
-                  , :content
+                state $ let
+                    raw $ match (get states :data)
+                      (:some value)
+                        or value $ {} $ :content |
+                      (:none)
+                        {} $ :content |
+                  if (struct? raw) (&struct:to-map raw)
+                    decode-map-as raw $ Map Dynamic Dynamic
+                content $ get state :content
               div
                 {} $ :class-name $ str-spaced css/global css/row
-                textarea $ {} (:value content) (:placeholder |Content)
+                textarea $ {}
+                  :value $ match content
+                    (:some value) value
+                    (:none) (Option :none)
+                  :placeholder |Content
                   :class-name $ str-spaced css/expand css/textarea
                   :style $ {} $ :height |320px
                   :on-input $ fn (e d!)
@@ -52,7 +55,9 @@
                       hint-fn $ Fn respo.schema/RespoEvent
                         Fn app.schema/Op $ -> Unit
                         -> Unit
-                      println content
+                      match content
+                        (:some value) (println value)
+                        (:none) (println nil)
                 if dev?
                   Option :some $ comp-typed-reel (>> states :reel) reel ({}) on-control!
                   Option :none
@@ -189,7 +194,7 @@
       :defs $ {}
         'Op $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defenum Op
-            :states (List respo.schema/CoordKey) Dynamic
+            :states (List respo.schema/CoordKey) (Map Dynamic Dynamic)
             :hydrate-storage app.schema/Store
           :examples $ []
           :schema $ quote EnumDef
