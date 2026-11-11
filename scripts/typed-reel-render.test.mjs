@@ -31,11 +31,12 @@ test('renders the typed Reel devtools with an empty history', () => {
 
 test('content edits survive Reel replay and the existing saved-state format', () => {
   const field = (value, key) => clt.get(value, clt.init_tags([key])[key]).extra[0];
-  const t = clt.init_tags(['states', 'content']);
-  const edit = clt._PCT__$o__$o_(Op, t.states, clt._$L_(), clt._$n__$M_(t.content, '中文🐈'));
+  const t = clt.init_tags(['edit-content', 'other']);
+  const edit = clt._PCT__$o__$o_(Op, t['edit-content'], clt._$L_(), clt._$n__$M_(t.other, true), '中文🐈');
   const reel = record_op(updater, new_reel(store), edit, 'edit', 1);
   const current = field(reel, 'store');
   assert.equal(field(field(field(current, 'states'), 'data'), 'content'), '中文🐈');
+  assert.equal(field(field(field(current, 'states'), 'data'), 'other'), true);
   assert.match(renderHtml(reel), /中文🐈/);
   const restored = clt.option_$o_unwrap(decode_store(clt.parse_cirru_edn(clt.format_cirru_edn(current))));
   assert.equal(clt.format_cirru_edn(restored), clt.format_cirru_edn(current));
