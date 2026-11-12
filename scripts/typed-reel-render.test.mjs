@@ -31,9 +31,11 @@ test('renders the typed Reel devtools with an empty history', () => {
 
 test('content edits survive Reel replay and the existing saved-state format', () => {
   const field = (value, key) => clt.get(value, clt.init_tags([key])[key]).extra[0];
-  const t = clt.init_tags(['edit-content', 'other']);
-  const edit = clt._PCT__$o__$o_(Op, t['edit-content'], clt._$L_(), clt._$n__$M_(t.other, true), '中文🐈');
-  const reel = record_op(updater, new_reel(store), edit, 'edit', 1);
+  const t = clt.init_tags(['edit-content', 'states', 'data', 'other']);
+  const previous = clt.assoc(store, t.states,
+    clt.assoc(field(store, 'states'), t.data, clt._$n__$M_(t.other, true)));
+  const edit = clt._PCT__$o__$o_(Op, t['edit-content'], clt._$L_(), '中文🐈');
+  const reel = record_op(updater, new_reel(previous), edit, 'edit', 1);
   const current = field(reel, 'store');
   assert.equal(field(field(field(current, 'states'), 'data'), 'content'), '中文🐈');
   assert.equal(field(field(field(current, 'states'), 'data'), 'other'), true);
@@ -41,7 +43,7 @@ test('content edits survive Reel replay and the existing saved-state format', ()
   const restored = clt.option_$o_unwrap(decode_store(clt.parse_cirru_edn(clt.format_cirru_edn(current))));
   assert.equal(clt.format_cirru_edn(restored), clt.format_cirru_edn(current));
   assert.equal(clt.option_$o_unwrap(decode_store(current)), current);
-  assert.equal(clt.format_cirru_edn(field(refresh(updater, reel, store), 'store')), clt.format_cirru_edn(current));
+  assert.equal(clt.format_cirru_edn(field(refresh(updater, reel, previous), 'store')), clt.format_cirru_edn(current));
   assert.equal(clt.option_$o_none_$q_(decode_store(clt.parse_cirru_edn('{} (:states $ {} (:cursor |wrong))'))), true);
   assert.equal(clt.option_$o_none_$q_(decode_store(clt.parse_cirru_edn(PRE_031_ARCHIVE.replace(':cursor $ []', ':cursor |wrong')))), true);
   assert.equal(clt.option_$o_some_$q_(decode_store(clt.parse_cirru_edn('{} (:states $ {})'))), true);

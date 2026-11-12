@@ -22,14 +22,7 @@
                       try-decode-map-as value $ List respo.schema/CoordKey
                       (:ok checked) checked
                       (:err _) (raise "|Expected List cursor")
-                state $ let
-                    raw $ match (get states :data)
-                      (:some value)
-                        or value $ {} $ :content |
-                      (:none)
-                        {} $ :content |
-                  if (struct? raw) (&struct:to-map raw)
-                    decode-map-as raw $ Map Dynamic Dynamic
+                state $ schema/read-editor-data $ respo.cursor/get-state-at states ([] :data)
                 content $ get state :content
               div
                 {} $ :class-name $ str-spaced css/global css/row
@@ -42,9 +35,9 @@
                   :style $ {} $ :height |320px
                   :on-input $ fn (e d!)
                     hint-fn $ Fn respo.schema/RespoEvent
-                      Fn app.schema/Op $ -> Unit
+                      Fn schema/Op $ -> Unit
                       -> Unit
-                    d! $ schema/Op :edit-content cursor state $ event-value e
+                    d! $ schema/Op :edit-content cursor $ event-value e
                 space-x 8
                 div
                   {} $ :class-name css/expand
@@ -53,7 +46,7 @@
                   button $ {} (:class-name css/button) (:inner-text |Run)
                     :on-click $ fn (e d!)
                       hint-fn $ Fn respo.schema/RespoEvent
-                        Fn app.schema/Op $ -> Unit
+                        Fn schema/Op $ -> Unit
                         -> Unit
                       match content
                         (:some value) (println value)
@@ -122,7 +115,7 @@
               (:none) &unit
             render-app!
             add-watch! *reel :changes $ fn (reel prev)
-              hint-fn $ Fn (reel.typed/State app.schema/Op app.schema/Store) (reel.typed/State app.schema/Op app.schema/Store) (-> Unit)
+              hint-fn $ Fn (typed/State schema/Op schema/Store) (typed/State schema/Op schema/Store) (-> Unit)
               render-app!
             listen-devtools! |k on-control!
             set-before-unload! $ fn (event)
@@ -160,7 +153,7 @@
             if (nil? build-errors)
               do (remove-watch! *reel :changes) (clear-cache!)
                 add-watch! *reel :changes $ fn (reel prev)
-                  hint-fn $ Fn (reel.typed/State app.schema/Op app.schema/Store) (reel.typed/State app.schema/Op app.schema/Store) (-> Unit)
+                  hint-fn $ Fn (typed/State schema/Op schema/Store) (typed/State schema/Op schema/Store) (-> Unit)
                   render-app!
                 reset! *reel $ typed/refresh updater @*reel schema/store
                 hud! |ok~ |Ok
@@ -194,7 +187,7 @@
       :defs $ {}
         'Op $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defenum Op
-            :edit-content (List respo.schema/CoordKey) (Map Dynamic Dynamic) String
+            :edit-content (List respo.schema/CoordKey) String
             :hydrate-storage app.schema/Store
           :examples $ []
           :schema $ quote EnumDef
@@ -228,6 +221,21 @@
           :examples $ []
           :schema $ quote $ Fn Dynamic
             -> $ Option Store
+        'read-editor-data $ %{} 'CodeEntry
+          :doc "|Normalizes the existing editor state while preserving its extension fields."
+          :code $ quote $ defn read-editor-data (raw-option)
+            let
+                raw $ match raw-option
+                  (:some value)
+                    or value $ {} $ :content |
+                  (:none)
+                    {} $ :content |
+              if (struct? raw) (&struct:to-map raw)
+                decode-map-as raw $ Map Dynamic Dynamic
+          :examples $ []
+          :schema $ quote $ Fn (Option T)
+            -> $ Map Dynamic Dynamic
+            :generics T
         'store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def store
             Store :states $ {} $ :cursor ([])
@@ -240,13 +248,16 @@
         %{} 'CodeEntry (:doc |)
           :code $ quote $ defn updater (store op op-id op-time)
             match op
-              (:edit-content cursor previous content)
-                assoc store :states $ decode-map-as
-                  update-state-tree (:states store) cursor $ assoc previous :content content
-                  Map Dynamic Dynamic
+              (:edit-content cursor content)
+                let
+                    states $ :states store
+                    previous $ app.schema/read-editor-data $ get-state-at states (conj cursor :data)
+                  assoc store :states $ decode-map-as
+                    update-state-tree states cursor $ assoc previous :content content
+                    Map Dynamic Dynamic
               (:hydrate-storage data) data
           :examples $ []
           :schema $ quote $ Fn app.schema/Store app.schema/Op String Number (-> app.schema/Store)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
-          :require $ respo.cursor :refer $ update-state-tree
+          :require $ respo.cursor :refer $ update-state-tree get-state-at
