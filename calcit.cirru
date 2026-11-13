@@ -23,14 +23,11 @@
                       (:ok checked) checked
                       (:err _) (raise "|Expected List cursor")
                 state $ schema/read-editor-data $ respo.cursor/get-state-at states ([] :data)
-                content $ get state :content
+                content $ .map (get state :content)
+                  fn (value) (decode-map-as value String)
               div
                 {} $ :class-name $ str-spaced css/global css/row
-                textarea $ {}
-                  :value $ match content
-                    (:some value) (decode-map-as value String)
-                    (:none) None
-                  :placeholder |Content
+                textarea $ {} (:value content) (:placeholder |Content)
                   :class-name $ str-spaced css/expand css/textarea
                   :style $ {} $ :height |320px
                   :on-input $ fn (e d!)
