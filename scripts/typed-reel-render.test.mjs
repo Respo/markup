@@ -47,6 +47,8 @@ test('content edits survive Reel replay and the existing saved-state format', ()
   assert.equal(clt.option_$o_none_$q_(decode_store(clt.parse_cirru_edn('{} (:states $ {} (:cursor |wrong))'))), true);
   assert.equal(clt.option_$o_none_$q_(decode_store(clt.parse_cirru_edn(PRE_031_ARCHIVE.replace(':cursor $ []', ':cursor |wrong')))), true);
   assert.equal(clt.option_$o_some_$q_(decode_store(clt.parse_cirru_edn('{} (:states $ {})'))), true);
+  assert.equal(clt.option_$o_some_$q_(decode_store(clt.parse_cirru_edn('{} (:states $ {} (2 ({})) (|panel ({})))'))), true);
+  assert.equal(clt.option_$o_none_$q_(decode_store(clt.parse_cirru_edn('{} (:states $ {} (true ({})))'))), true);
 });
 
 test('hydrates the fixed pre-upgrade archive through the typed Reel update path', () => {
