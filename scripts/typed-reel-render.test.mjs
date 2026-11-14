@@ -47,6 +47,18 @@ test('content edits survive Reel replay and the existing saved-state format', ()
   assert.equal(clt.option_$o_none_$q_(decode_store(clt.parse_cirru_edn('{} (:states $ {} (:cursor |wrong))'))), true);
   assert.equal(clt.option_$o_none_$q_(decode_store(clt.parse_cirru_edn(PRE_031_ARCHIVE.replace(':cursor $ []', ':cursor |wrong')))), true);
   assert.equal(clt.option_$o_some_$q_(decode_store(clt.parse_cirru_edn('{} (:states $ {})'))), true);
+  assert.equal(clt.option_$o_some_$q_(decode_store(clt.parse_cirru_edn('{} (:states $ {} (2 ({})) (|panel ({})))'))), true);
+  assert.equal(clt.option_$o_none_$q_(decode_store(clt.parse_cirru_edn('{} (:states $ {} (true ({})))'))), true);
+});
+
+test('updates and restores an editor with string and number cursor keys', () => {
+  const t = clt.init_tags(['edit-content', 'states', 'data', 'content']);
+  const edit = clt._PCT__$o__$o_(Op, t['edit-content'], clt._$L_('panel', 2), 'nested');
+  const updated = updater(store, edit, 'edit', 1);
+  const restored = clt.option_$o_unwrap(decode_store(clt.parse_cirru_edn(clt.format_cirru_edn(updated))));
+  const field = (value, key) => clt.option_$o_unwrap(clt.get(value, key));
+  const editor = field(field(field(field(restored, t.states), 'panel'), 2), t.data);
+  assert.equal(field(editor, t.content), 'nested');
 });
 
 test('hydrates the fixed pre-upgrade archive through the typed Reel update path', () => {
