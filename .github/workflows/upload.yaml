@@ -81,6 +81,7 @@ jobs:
       run: |
         set -euo pipefail
         calcit calcit.cirru js
+        calcit --reload-fn respo.render.html/make-string js
         node --test scripts/typed-reel-render.test.mjs
         yarn vite build --base="$VITE_BASE_URL"
 
