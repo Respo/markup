@@ -6,6 +6,10 @@ Demo http://repo.respo-mvc.org/markup/ .
 
 ### Usages
 
+当前候选使用 Calcit / `@calcit/procs` **0.44.0**、Respo **0.19.12**、UI **0.15.6**、Reel **0.11.4** 和 JS-FFI **0.2.18**。请重新安装依赖并重新生成前端资源；存档格式、HUD 和编辑行为保持不变。
+
+以下为 0.43 迁移记录：
+
 本次候选 **0.0.6** 配对正式 Calcit / `@calcit/procs` **0.43.0**。
 消费者需重新安装完整依赖图、生成 JS 并完整刷新页面。Content 输入、Run、Reel 调试工具、
 存档 key 和格式保持；Demo 不新增 Markdown 解析功能。UI/Reel 跨 minor 升级可能有样式差异。
