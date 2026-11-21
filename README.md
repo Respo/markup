@@ -6,7 +6,7 @@ Demo http://repo.respo-mvc.org/markup/ .
 
 ### Usages
 
-当前候选使用 Calcit / `@calcit/procs` **0.44.0**、Respo **0.19.12**、UI **0.15.6**、Reel **0.11.4** 和 JS-FFI **0.2.18**。请重新安装依赖并重新生成前端资源；存档格式、HUD 和编辑行为保持不变。
+当前候选使用 Calcit / `@calcit/procs` **0.44.0**、Respo **0.19.13**、UI **0.15.7**、Reel **0.11.5** 和 JS-FFI **0.2.19**。请重新安装依赖并重新生成前端资源；存档格式、HUD 和编辑行为保持不变。
 
 以下为 0.43 迁移记录：
 
