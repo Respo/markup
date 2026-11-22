@@ -251,12 +251,10 @@
                 let
                     states $ :states store
                     previous $ app.schema/read-editor-data $ get-state-at states (conj cursor :data)
-                  assoc store :states $ decode-map-as
-                    update-state-tree states cursor $ assoc previous :content content
-                    Map respo.schema/CoordKey Dynamic
+                  assoc store :states $ update-state-map states cursor $ assoc previous :content content
               (:hydrate-storage data) data
           :examples $ []
           :schema $ quote $ Fn app.schema/Store app.schema/Op String Number (-> app.schema/Store)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
-          :require $ respo.cursor :refer $ update-state-tree get-state-at
+          :require $ respo.cursor :refer $ update-state-map get-state-at
