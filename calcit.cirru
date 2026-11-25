@@ -226,7 +226,12 @@
             let
                 raw $ match raw-option
                   (:some value)
-                    or value $ {} $ :content |
+                    if
+                      or (nil? value)
+                        = (type-of value) :unit
+                        if (bool? value) (not value) false
+                      {} $ :content |
+                      , value
                   (:none)
                     {} $ :content |
               if (struct? raw) (&struct:to-map raw)

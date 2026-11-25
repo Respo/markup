@@ -4,7 +4,7 @@ import test from 'node:test';
 process.env.mode = 'dev';
 
 const { comp_container } = await import('../js-out/app.comp.container.mjs');
-const { Op, store, decode_store } = await import('../js-out/app.schema.mjs');
+const { Op, store, decode_store, read_editor_data } = await import('../js-out/app.schema.mjs');
 const { updater } = await import('../js-out/app.updater.mjs');
 const { new_reel, toggle_display, record_op, refresh } = await import('../js-out/reel.typed.mjs');
 const { make_string } = await import('../js-out/respo.render.html.mjs');
@@ -19,6 +19,19 @@ const PRE_031_ARCHIVE = `
   :cursor $ []
   :data $ {} $ :content "|旧版合成存档🐈"
 `;
+
+test('editor data uses empty fallback and preserves valid data', () => {
+  const tags = clt.init_tags(['some', 'none', 'content', 'extra']);
+  const some = value => clt._PCT__$o__$o_(clt.Option, tags.some, value);
+  const none = clt._PCT__$o__$o_(clt.Option, tags.none);
+  const content = value => clt.option_$o_unwrap(clt.get(value, tags.content));
+  for (const input of [none, some(null), some(undefined), some(false)]) {
+    assert.equal(content(read_editor_data(input)), '');
+  }
+  const original = clt._$n__$M_(tags.content, '中文🐈', tags.extra, 0);
+  assert.equal(clt._$n__$e_(read_editor_data(some(original)), original), true);
+  for (const input of [true, 0, '']) assert.throws(() => read_editor_data(some(input)));
+});
 
 test('renders the typed Reel devtools with an empty history', () => {
   const reel = toggle_display(new_reel(store));
