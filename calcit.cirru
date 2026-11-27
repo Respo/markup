@@ -104,7 +104,9 @@
               storage-get $ :storage-key config/site
               (:some raw)
                 match
-                  schema/decode-store $ parse-cirru-edn raw
+                  schema/decode-store $ try (parse-cirru-edn raw)
+                    fn (err) (hud! |error "|Invalid saved Markup state")
+                      raise $ str err
                   (:some stored)
                     dispatch! $ schema/Op :hydrate-storage stored
                   (:none)
