@@ -6,7 +6,7 @@ Demo http://repo.respo-mvc.org/markup/ .
 
 ### Usages
 
-当前候选使用 Calcit / `@calcit/procs` **0.46.0**、Respo **0.20.0**、UI **0.16.6**、Reel **0.11.10** 和 JS-FFI **0.2.26**。请重新安装依赖并重新生成前端资源；存档格式和 HUD 保持。编辑器数据现在明确处理空值和 false，保留有效 Map 的扩展字段，非法非 Map 数据仍会报错。
+当前候选使用 Calcit / `@calcit/procs` **0.47.1**、Respo **0.20.1**、UI **0.16.7**、Reel **0.11.11** 和 JS-FFI **0.2.26**。请重新安装依赖并重新生成前端资源；存档格式和 HUD 保持。编辑器数据现在明确处理空值和 false，保留有效 Map 的扩展字段，非法非 Map 数据仍会报错。
 
 以下为 0.43 迁移记录：
 
